@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Futsal Player Stats Dashboard</title>
+<style>
+  :root { --brand:#0078d4; --bg:#f5f7fb; --text:#0f172a; --muted:#64748b; }
+  html, body { margin:0; padding:0; background:var(--bg); color:var(--text); font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+  header { padding:24px; text-align:center; background:white; box-shadow:0 1px 8px rgba(0,0,0,.06); position:sticky; top:0; z-index:10; }
+  h1 { margin:0; color:var(--brand); font-weight:800; letter-spacing:.2px; }
+  main { max-width:1100px; margin:32px auto; padding:0 16px; }
+  .card { background:white; border-radius:16px; box-shadow:0 6px 24px rgba(2,6,23,.06); padding:16px; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  thead th { position:sticky; top:0; background:#eef6ff; color:#0b3b66; text-align:left; font-weight:700; padding:12px; border-bottom:2px solid #dbeafe; cursor:pointer; }
+  tbody td { padding:10px 12px; border-bottom:1px solid #e5e7eb; }
+  tr:hover td { background:#f9fafb; }
+  .meta { color:var(--muted); font-size:13px; margin:6px 0 16px; }
+  .pill { display:inline-block; padding:4px 10px; border-radius:999px; background:#eff6ff; color:#1d4ed8; font-weight:600; font-size:12px; }
+  .top5 { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
+  .chip { background:#f1f5f9; border:1px solid #e2e8f0; padding:8px 12px; border-radius:999px; }
+  footer { text-align:center; color:#94a3b8; font-size:12px; padding:24px; }
+.totals { margin-top:8px; }
+.totals-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-top:12px; }
+.kpi { background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px; text-align:center; }
+.kpi-label { font-size:12px; color:#64748b; }
+.kpi-value { font-size:22px; font-weight:800; margin-top:6px; }
+  .hidden { display:none; }
+  .search { margin:12px 0 18px; display:flex; gap:12px; flex-wrap:wrap; }
+  input[type="search"] { padding:10px 12px; border-radius:10px; border:1px solid #cbd5e1; min-width:260px; }
+  select { padding:10px 12px; border-radius:10px; border:1px solid #cbd5e1; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Futsal Player Stats Dashboard</h1>
+    <div class="meta" id="meta">Loading latest data…</div>
+  </header>
+  <main>
+    <section class="card">
+      <div class="search">
+        
+        <input id="q" type="search" placeholder="Search player…" />
+        <select id="sort">
+          <option value="Rank|asc">Sort: Rank (asc)</option>
+<option value="Total goals +Assists(All season )|desc">Sort: Total Contributions (desc)</option>
+          <option value="Total goals  (All season stats)|desc">Sort: Goals (desc)</option>
+          <option value="Total Assists (All season stats)|desc">Sort: Assists (desc)</option>
+          <option value="Average Total contribution|desc">Sort: Avg Contribution (desc)</option>
+          <option value="Total games played (All season stats)|desc">Sort: Games (desc)</option>
+          <option value="Player Name|asc">Sort: Player (A→Z)</option>
+        </select>
+      </div>
+      <div class="top5" id="top5"></div>
+<section class="card" style="margin-top:16px;">
+  <div id="seasonTotals" class="totals">
+    <div class="pill">Season totals</div>
+    <div class="totals-grid">
+      <div class="kpi"><div class="kpi-label">Total Games</div><div class="kpi-value" id="totGames">—</div></div>
+      <div class="kpi"><div class="kpi-label">Total Goals</div><div class="kpi-value" id="totGoals">—</div></div>
+      <div class="kpi"><div class="kpi-label">Total Assists</div><div class="kpi-value" id="totAssists">—</div></div>
+      <div class="kpi"><div class="kpi-label">Total Goals+Assists</div><div class="kpi-value" id="totGA">—</div></div>
+    </div>
+  </div>
+</section>
+      <div class="card-inner">
+        <table id="tbl">
+          <thead>
+            <tr>
+              <th data-k="Rank">#</th><th data-k="Player Name">Player</th>
+              <th data-k="Total games played (All season stats)">Games</th>
+              <th data-k="Total goals  (All season stats)">Goals</th>
+              <th data-k="Total Assists (All season stats)">Assists</th>
+              <th data-k="Total goals +Assists(All season )">Goals+Assists</th>
+              <th data-k="Average goals per game">Avg G/Game</th>
+              <th data-k="Average assists per game">Avg A/Game</th>
+              <th data-k="Average Total contribution">Avg G+A/Game</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+          <tfoot>
+    <tr>
+      <th>Total</th>
+      <th id="ftGames">—</th>
+      <th id="ftGoals">—</th>
+      <th id="ftAssists">—</th>
+      <th id="ftGA">—</th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </tfoot>
+</table>
+      </div>
+    </section>
+  </main>
+  <footer>Built for learning Azure • Static site ready for App Service or Static Web Apps</footer>
+
+<script>
+const DATA_URL = "data.json";
+
+
+ // Place data.json next to this index.html when deploying
+
+let rows = [];
+let filtered = [];
+
+function fmt(n) {
+  if (n === null || n === undefined || isNaN(n)) return "0";
+  return Number(n).toLocaleString(undefined, { maximumFractionDigits: 3 });
+}
+
+function updateSeasonTotals() {
+  const sum = (arr, k) => arr.reduce((acc, r) => acc + (Number(r[k]) || 0), 0);
+  const tg = sum(rows, 'Total games played (All season stats)');
+  const g  = sum(rows, 'Total goals  (All season stats)');
+  const a  = sum(rows, 'Total Assists (All season stats)');
+  const ga = sum(rows, 'Total goals +Assists(All season )');
+  const n = (x)=> Number(x).toLocaleString();
+  document.getElementById('totGames').textContent = n(tg);
+  document.getElementById('totGoals').textContent = n(g);
+  document.getElementById('totAssists').textContent = n(a);
+  document.getElementById('totGA').textContent = n(ga);
+  // table footer
+  const ft = (id,val)=>{ const el = document.getElementById(id); if(el) el.textContent = n(val); };
+  ft('ftGames', tg); ft('ftGoals', g); ft('ftAssists', a); ft('ftGA', ga);
+}
+
+function render() {
+  const q = document.getElementById('q').value.toLowerCase().trim();
+  const sortSel = document.getElementById('sort').value.split("|");
+  const sortKey = sortSel[0], dir = sortSel[1];
+
+  filtered = rows.filter(r => !q || String(r["Player Name"]).toLowerCase().includes(q));
+
+  filtered.sort((a,b)=>{
+    const av = a[sortKey], bv = b[sortKey];
+    if (typeof av === "number" && typeof bv === "number") return dir==="desc" ? (bv-av) : (av-bv);
+    return dir==="desc" ? String(bv).localeCompare(String(av)) : String(av).localeCompare(String(bv));
+  });
+
+  const tb = document.querySelector("#tbl tbody");
+  tb.innerHTML = "";
+  for (const r of filtered) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${fmt(r["Rank"])}</td><td>${r["Player Name"]}</td>
+      <td>${fmt(r["Total games played (All season stats)"])}</td>
+      <td>${fmt(r["Total goals  (All season stats)"])}</td>
+      <td>${fmt(r["Total Assists (All season stats)"])}</td>
+      <td>${fmt(r["Total goals +Assists(All season )"])}</td>
+      <td>${fmt(r["Average goals per game"])}</td>
+      <td>${fmt(r["Average assists per game"])}</td>
+      <td>${fmt(r["Average Total contribution"])}</td>
+    `;
+    tb.appendChild(tr);
+  }
+
+  // Top 5 by total contributions (goals+assists)
+  const top = [...rows].sort((a,b)=>(b["Total goals +Assists(All season )"] - a["Total goals +Assists(All season )"])).slice(0,5);
+  const t5 = document.getElementById("top5");
+  t5.innerHTML = top.map((r, i)=>`<span class="chip">#${i+1} ${r["Player Name"]}: ${fmt(r["Total goals +Assists(All season )"])} total</span>`).join("");
+}
+
+async function init() {
+  const res = await fetch(DATA_URL);
+  rows = await res.json();
+  document.getElementById('meta').textContent = "Players: " + rows.length + " • Last refreshed: " + new Date().toLocaleString();
+  updateSeasonTotals();
+  // Render overall Top-5 by season total contributions
+  const top = [...rows].sort((a,b)=> b["Total goals +Assists(All season )"] - a["Total goals +Assists(All season )"]).slice(0,5);
+  const t5 = document.getElementById("top5");
+  t5.innerHTML = top.map((r,i)=>`<span class="chip">#${i+1} ${r["Player Name"]}: ${fmt(r["Total goals +Assists(All season )"])} total</span>`).join("");
+  render();
+
+  // Load months and populate dropdown; default show latest month Top-5
+  try {
+    const rMonths = await fetch(MONTHS_URL);
+    const months = await rMonths.json();
+    const sel = document.getElementById('monthSelect');
+    // Populate dropdown
+    if (Array.isArray(months) && months.length) {
+      months.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m.month;
+        opt.textContent = m.label;
+        sel.appendChild(opt);
+      });
+      // default render latest
+      const latest = months[months.length - 1];
+      renderTop5(latest.top5, latest.label);
+      sel.value = latest.month;
+    } else {
+      // Fallback to top5_month.json if no months payload
+      const r2 = await fetch(TOP5_MONTH_URL);
+      const m = await r2.json();
+      if (Array.isArray(m) && m.length) {
+        renderTop5(m.map((x,i)=>({ "Player Name": x["Player Name"], "GA": x["Latest Month GA"] })), "Latest Month");
+      }
+    }
+    // Change handler
+    sel.addEventListener('change', () => {
+      const pick = months.find(x => x.month === sel.value);
+      if (pick) renderTop5(pick.top5, pick.label);
+    });
+  } catch(e) { console.error(e); }
+
+  function renderTop5(list, label){
+    const t5 = document.getElementById("top5");
+    t5.innerHTML = list.map((r, i)=>`<span class="chip">#${i+1} ${r["Player Name"]}: ${r["GA"]} in ${label}</span>`).join("");
+  }
+}
+
+document.getElementById('q').addEventListener('input', render);
+document.getElementById('sort').addEventListener('change', render);
+
+init();
+</script>
+</body>
+</html>
