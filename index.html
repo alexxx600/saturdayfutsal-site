@@ -97,12 +97,45 @@
   <footer>Built for learning Azure • Static site ready for App Service or Static Web Apps</footer>
 
 <script>
-const DATA_URL = "data.json";
+const PB = "https://api.saturdayfutsal.com";
 
 
  // Place data.json next to this index.html when deploying
 
 let rows = [];
+  function getSeasonFromUrlOrDefault() {
+  const url = new URL(window.location.href);
+  return url.searchParams.get("season") || "2026"; // default season
+}
+
+function setSeasonInUrl(seasonYear) {
+  const url = new URL(window.location.href);
+  url.searchParams.set("season", seasonYear);
+  window.location.href = url.toString();
+}
+
+async function fetchSeasons() {
+  const res = await fetch(`${PB}/api/collections/seasons/records?perPage=50`);
+  if (!res.ok) throw new Error(`Seasons fetch failed (${res.status})`);
+  const data = await res.json();
+  return data.items;
+}
+
+async function fetchMatchdays(seasonId) {
+  const res = await fetch(`${PB}/api/collections/matchdays/records?perPage=200&filter=season="${seasonId}"&sort=date`);
+  if (!res.ok) throw new Error(`Matchdays fetch failed (${res.status})`);
+  const data = await res.json();
+  return data.items;
+}
+
+async function fetchAppearancesForMatchday(matchdayId) {
+  const res = await fetch(
+    `${PB}/api/collections/appearances/records?perPage=200&filter=matchday="${matchdayId}"&expand=player`
+  );
+  if (!res.ok) throw new Error(`Appearances fetch failed (${res.status})`);
+  const data = await res.json();
+  return data.items;
+}
 let filtered = [];
 
 function fmt(n) {
@@ -163,41 +196,118 @@ function render() {
 }
 
 async function init() {
-  const res = await fetch(DATA_URL);
-  rows = await res.json();
-  document.getElementById('meta').textContent = "Players: " + rows.length + " • Last refreshed: " + new Date().toLocaleString();
-  updateSeasonTotals();
-  // Render overall Top-5 by season total contributions
-  const top = [...rows].sort((a,b)=> b["Total goals +Assists(All season )"] - a["Total goals +Assists(All season )"]).slice(0,5);
-  const t5 = document.getElementById("top5");
-  t5.innerHTML = top.map((r,i)=>`<span class="chip">#${i+1} ${r["Player Name"]}: ${fmt(r["Total goals +Assists(All season )"])} total</span>`).join("");
-  render();
-
-  // Load months and populate dropdown; default show latest month Top-5
   try {
-    const rMonths = await fetch(MONTHS_URL);
-    const months = await rMonths.json();
-    const sel = document.getElementById('monthSelect');
+    // 1) load seasons and populate dropdown
+    const seasons = await fetchSeasons();
+
+    // Try to find 2025/2026 by a "year" field if you have it,
+    // otherwise fall back to name/display_name containing the year.
+    const wantYear = getSeasonFromUrlOrDefault();
+
+    const byYearField = seasons.find(s => String(s.year) === String(wantYear));
+    const byText = seasons.find(s =>
+      String(s.name || "").includes(wantYear) ||
+      String(s.display_name || "").includes(wantYear)
+    );
+    const seasonRec = byYearField || byText || seasons.find(s => s.status === "active") || seasons[0];
+
     // Populate dropdown
-    if (Array.isArray(months) && months.length) {
-      months.forEach(m => {
-        const opt = document.createElement('option');
-        opt.value = m.month;
-        opt.textContent = m.label;
-        sel.appendChild(opt);
-      });
-      // default render latest
-      const latest = months[months.length - 1];
-      renderTop5(latest.top5, latest.label);
-      sel.value = latest.month;
-    } else {
-      // Fallback to top5_month.json if no months payload
-      const r2 = await fetch(TOP5_MONTH_URL);
-      const m = await r2.json();
-      if (Array.isArray(m) && m.length) {
-        renderTop5(m.map((x,i)=>({ "Player Name": x["Player Name"], "GA": x["Latest Month GA"] })), "Latest Month");
-      }
+    const sel = document.getElementById("seasonSelect");
+    sel.innerHTML = "";
+
+    // Sort newest first if year exists
+    seasons.sort((a,b) => Number(b.year || 0) - Number(a.year || 0));
+
+    for (const s of seasons) {
+      const opt = document.createElement("option");
+      const label = s.display_name || s.name || s.year || s.id;
+
+      // Prefer year value if exists, else use id (still works)
+      opt.value = s.year ? String(s.year) : s.id;
+      opt.textContent = label;
+
+      if (s.id === seasonRec.id) opt.selected = true;
+      sel.appendChild(opt);
     }
+
+    sel.addEventListener("change", () => setSeasonInUrl(sel.value));
+
+    // 2) load matchdays for the season
+    const matchdays = await fetchMatchdays(seasonRec.id);
+
+    // 3) load appearances for each matchday
+    const allApps = [];
+    for (const md of matchdays) {
+      const apps = await fetchAppearancesForMatchday(md.id);
+      allApps.push(...apps);
+    }
+
+    // 4) aggregate into your existing "rows" shape that render() expects
+    const map = new Map();
+
+    for (const a of allApps) {
+      const playerName = a.expand?.player?.display_name || "Unknown";
+      const goals = Number(a.goals || 0);
+      const assists = Number(a.assists || 0);
+
+      if (!map.has(playerName)) {
+        map.set(playerName, { name: playerName, games: 0, goals: 0, assists: 0 });
+      }
+      const p = map.get(playerName);
+      p.games += 1;
+      p.goals += goals;
+      p.assists += assists;
+    }
+
+    // Build rows using your exact keys
+    const arr = Array.from(map.values()).map(p => {
+      const ga = p.goals + p.assists;
+      const avgG = p.games ? p.goals / p.games : 0;
+      const avgA = p.games ? p.assists / p.games : 0;
+      const avgGA = p.games ? ga / p.games : 0;
+
+      return {
+        "Player Name": p.name,
+        "Total games played (All season stats)": p.games,
+        "Total goals  (All season stats)": p.goals,
+        "Total Assists (All season stats)": p.assists,
+        "Total goals +Assists(All season )": ga,
+        "Average goals per game": avgG,
+        "Average assists per game": avgA,
+        "Average Total contribution": avgGA
+      };
+    });
+
+    // Rank
+    arr.sort((a,b) =>
+      (b["Total goals +Assists(All season )"] - a["Total goals +Assists(All season )"]) ||
+      (b["Total goals  (All season stats)"] - a["Total goals  (All season stats)"]) ||
+      String(a["Player Name"]).localeCompare(String(b["Player Name"]))
+    );
+    arr.forEach((r, i) => r["Rank"] = i + 1);
+
+    rows = arr;
+
+    // 5) Update UI
+    const seasonLabel = seasonRec.display_name || seasonRec.name || seasonRec.year || "";
+    document.getElementById('meta').textContent =
+      `Season: ${seasonLabel} • Players: ${rows.length} • Matchdays: ${matchdays.length} • Last refreshed: ${new Date().toLocaleString()}`;
+
+    updateSeasonTotals();
+
+    // Top 5 and table render (uses your existing functions)
+    const top = [...rows].sort((a,b)=> b["Total goals +Assists(All season )"] - a["Total goals +Assists(All season )"]).slice(0,5);
+    const t5 = document.getElementById("top5");
+    t5.innerHTML = top.map((r,i)=>`<span class="chip">#${i+1} ${r["Player Name"]}: ${fmt(r["Total goals +Assists(All season )"])} total</span>`).join("");
+
+    render();
+
+  } catch (err) {
+    console.error(err);
+    document.getElementById('meta').textContent = "Failed to load PocketBase data.";
+    alert(err.message || String(err));
+  }
+}
     // Change handler
     sel.addEventListener('change', () => {
       const pick = months.find(x => x.month === sel.value);
