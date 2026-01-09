@@ -308,19 +308,7 @@ async function init() {
     alert(err.message || String(err));
   }
 }
-    // Change handler
-    sel.addEventListener('change', () => {
-      const pick = months.find(x => x.month === sel.value);
-      if (pick) renderTop5(pick.top5, pick.label);
-    });
-  } catch(e) { console.error(e); }
-
-  function renderTop5(list, label){
-    const t5 = document.getElementById("top5");
-    t5.innerHTML = list.map((r, i)=>`<span class="chip">#${i+1} ${r["Player Name"]}: ${r["GA"]} in ${label}</span>`).join("");
-  }
-}
-
+   
 document.getElementById('q').addEventListener('input', render);
 document.getElementById('sort').addEventListener('change', render);
 
