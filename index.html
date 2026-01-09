@@ -103,14 +103,14 @@ const PB = "https://api.saturdayfutsal.com";
  // Place data.json next to this index.html when deploying
 
 let rows = [];
-  function getSeasonFromUrlOrDefault() {
+ function getSeasonIdFromUrl() {
   const url = new URL(window.location.href);
-  return url.searchParams.get("season") || "2026"; // default season
+  return url.searchParams.get("seasonId"); // PocketBase record id
 }
 
-function setSeasonInUrl(seasonYear) {
+function setSeasonIdInUrl(seasonId) {
   const url = new URL(window.location.href);
-  url.searchParams.set("season", seasonYear);
+  url.searchParams.set("seasonId", seasonId);
   window.location.href = url.toString();
 }
 
@@ -202,14 +202,13 @@ async function init() {
 
     // Try to find 2025/2026 by a "year" field if you have it,
     // otherwise fall back to name/display_name containing the year.
-    const wantYear = getSeasonFromUrlOrDefault();
+   const seasonIdFromUrl = getSeasonIdFromUrl();
 
-    const byYearField = seasons.find(s => String(s.year) === String(wantYear));
-    const byText = seasons.find(s =>
-      String(s.name || "").includes(wantYear) ||
-      String(s.display_name || "").includes(wantYear)
-    );
-    const seasonRec = byYearField || byText || seasons.find(s => s.status === "active") || seasons[0];
+// default = active season (2026)
+const activeSeason = seasons.find(s => s.status === "active") || seasons[0];
+
+// if seasonId is in the URL, use it; otherwise use active
+const seasonRec = seasons.find(s => s.id === seasonIdFromUrl) || activeSeason;
 
     // Populate dropdown
     const sel = document.getElementById("seasonSelect");
@@ -223,15 +222,10 @@ async function init() {
       const label = s.display_name || s.name || s.year || s.id;
 
       // Prefer year value if exists, else use id (still works)
-      opt.value = s.year ? String(s.year) : s.id;
-      opt.textContent = label;
+     opt.value = s.id; // always id
+opt.textContent = s.display_name || s.name || s.year || s.id;
 
-      if (s.id === seasonRec.id) opt.selected = true;
-      sel.appendChild(opt);
-    }
-
-    sel.addEventListener("change", () => setSeasonInUrl(sel.value));
-
+sel.addEventListener("change", () => setSeasonIdInUrl(sel.value));
     // 2) load matchdays for the season
     const matchdays = await fetchMatchdays(seasonRec.id);
 
