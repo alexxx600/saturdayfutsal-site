@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Saturday Futsal • 2026 note</title>
+<style>
+  :root { --brand:#0078d4; --bg:#f5f7fb; --text:#0f172a; --muted:#64748b; }
+  html, body { margin:0; padding:0; background:var(--bg); color:var(--text); font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+  header { padding:24px; text-align:center; background:white; box-shadow:0 1px 8px rgba(0,0,0,.06); position:sticky; top:0; z-index:10; }
+  h1 { margin:0; color:var(--brand); font-weight:800; letter-spacing:.2px; }
+  main { max-width:1100px; margin:32px auto; padding:0 16px; }
+  .card { background:white; border-radius:16px; box-shadow:0 6px 24px rgba(2,6,23,.06); padding:16px; margin-bottom:16px; }
+  .meta { color:var(--muted); font-size:13px; margin:6px 0 16px; }
+  .pill { display:inline-block; padding:4px 10px; border-radius:999px; background:#eff6ff; color:#1d4ed8; font-weight:600; font-size:12px; }
+  .top5 { display:flex; gap:12px; flex-wrap:wrap; margin:12px 0 16px; }
+  .chip { background:#f1f5f9; border:1px solid #e2e8f0; padding:8px 12px; border-radius:999px; }
+  .search { margin:12px 0 18px; display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+  input[type="search"], select { padding:10px 12px; border-radius:10px; border:1px solid #cbd5e1; }
+  input[type="search"] { min-width:260px; }
+  a.btn { display:inline-block; padding:10px 12px; border-radius:10px; border:1px solid #cbd5e1; text-decoration:none; color:var(--text); background:#fff; }
+  a.btn:hover { background:#f8fafc; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  thead th { background:#eef6ff; color:#0b3b66; text-align:left; font-weight:700; padding:12px; border-bottom:2px solid #dbeafe; }
+  tbody td { padding:10px 12px; border-bottom:1px solid #e5e7eb; }
+  tr:hover td { background:#f9fafb; }
+  .totals-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-top:12px; }
+  .kpi { background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px; text-align:center; }
+  .kpi-label { font-size:12px; color:#64748b; }
+  .kpi-value { font-size:22px; font-weight:800; margin-top:6px; }
+  ul { margin:10px 0 0; padding-left:18px; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Saturday Futsal • 2026 Season</h1>
+    <div class="meta" id="meta">Loading…</div>
+  </header>
+
+  <main>
+    <section class="card">
+      <div class="search">
+        <a class="btn" href="/2025.html">View 2025 Archive</a>
+        <span class="pill" id="seasonPill">Season: —</span>
+        <input id="q" type="search" placeholder="Search player…" />
+        <select id="sort">
+          <option value="Rank|asc">Sort: Rank (asc)</option>
+          <option value="GA|desc">Sort: Goals+Assists (desc)</option>
+          <option value="Goals|desc">Sort: Goals (desc)</option>
+          <option value="Assists|desc">Sort: Assists (desc)</option>
+          <option value="Games|desc">Sort: Games (desc)</option>
+          <option value="Name|asc">Sort: Player (A→Z)</option>
+        </select>
+        <select id="month">
+          <option value="ALL">Monthly: All</option>
+        </select>
+      </div>
+
+      <div class="top5" id="top5"></div>
+
+      <div class="pill">Season totals</div>
+      <div class="totals-grid">
+        <div class="kpi"><div class="kpi-label">Total Games</div><div class="kpi-value" id="totGames">—</div></div>
+        <div class="kpi"><div class="kpi-label">Total Goals</div><div class="kpi-value" id="totGoals">—</div></div>
+        <div class="kpi"><div class="kpi-label">Total Assists</div><div class="kpi-value" id="totAssists">—</div></div>
+        <div class="kpi"><div class="kpi-label">Total Goals+Assists</div><div class="kpi-value" id="totGA">—</div></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="pill">Leaderboard</div>
+      <table id="tbl">
+        <thead>
+          <tr>
+            <th>#</th><th>Player</th><th>Games</th><th>Goals</th><th>Assists</th><th>Goals+Assists</th>
+            <th>Avg G/Game</th><th>Avg A/Game</th><th>Avg G+A/Game</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <section class="card">
+      <div class="pill">Match history</div>
+      <div class="meta">Shows each matchday and who played (with goals/assists).</div>
+      <div id="history">—</div>
+    </section>
+  </main>
+
+<script>
+/** =========================
+ *  CONFIG
+ *  ========================= */
+const PB_BASE = "http://127.0.0.1:8090"; // TODO: replace with your hosted PocketBase URL
+
+/** =========================
+ *  HELPERS
+ *  ========================= */
+const $ = (id) => document.getElementById(id);
+
+function n(x) { return Number(x || 0); }
+function fmt(x, dp=3) {
+  const v = Number(x);
+  if (!isFinite(v)) return "0";
+  return v.toLocaleString(undefined, { maximumFractionDigits: dp });
+}
+function isoMonth(isoDate) {
+  const d = new Date(isoDate);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  return `${y}-${m}`;
+}
+function monthLabel(ym) {
+  const [y,m] = ym.split("-");
+  const d = new Date(Number(y), Number(m)-1, 1);
+  return d.toLocaleString(undefined, { month:"long", year:"numeric" });
+}
+
+// Fetch with timeout so the page never “hangs”
+async function fetchJson(url, ms=8000) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), ms);
+  try {
+    const res = await fetch(url, { signal: ctrl.signal });
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    return await res.json();
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+/** =========================
+ *  POCKETBASE LOAD
+ *  ========================= */
+async function getActiveSeason() {
+  const data = await fetchJson(`${PB_BASE}/api/collections/seasons/records?filter=isActive=true&perPage=1`);
+  return data.items?.[0] || null;
+}
+
+async function getMatchdays(seasonId) {
+  const data = await fetchJson(`${PB_BASE}/api/collections/matchdays/records?filter=season="${seasonId}"&sort=date&perPage=200`);
+  return data.items || [];
+}
+
+async function getAppearances(seasonId) {
+  // Requires appearances fields: season (relation), matchday (relation), player (relation), goals, assists
+  const data = await fetchJson(
+    `${PB_BASE}/api/collections/appearances/records?filter=season="${seasonId}"&expand=player,matchday&perPage=2000`
+  );
+  return data.items || [];
+}
+
+/** =========================
+ *  AGGREGATION
+ *  ========================= */
+function buildTotals(appearances, monthFilter = "ALL") {
+  const totals = new Map();
+
+  for (const a of appearances) {
+    const p = a.expand?.player;
+    const md = a.expand?.matchday;
+    if (!p || !md?.date) continue;
+
+    if (monthFilter !== "ALL" && isoMonth(md.date) !== monthFilter) continue;
+
+    const key = p.id;
+    if (!totals.has(key)) {
+      totals.set(key, { Name: p.name || p.username || p.displayName || "Unknown", Games:0, Goals:0, Assists:0, GA:0 });
+    }
+    const row = totals.get(key);
+    row.Games += 1;
+    row.Goals += n(a.goals);
+    row.Assists += n(a.assists);
+    row.GA += n(a.goals) + n(a.assists);
+  }
+
+  const list = [...totals.values()].sort((a,b)=> b.GA - a.GA || b.Goals - a.Goals || a.Name.localeCompare(b.Name));
+  list.forEach((r,i)=> r.Rank = i+1);
+  list.forEach(r => {
+    r.avgG = r.Games ? r.Goals / r.Games : 0;
+    r.avgA = r.Games ? r.Assists / r.Games : 0;
+    r.avgGA = r.Games ? r.GA / r.Games : 0;
+  });
+  return list;
+}
+
+function buildMonthOptions(matchdays) {
+  const set = new Set();
+  for (const md of matchdays) if (md.date) set.add(isoMonth(md.date));
+  return [...set].sort(); // ascending YYYY-MM
+}
+
+/** =========================
+ *  RENDER
+ *  ========================= */
+function renderKpis(rows) {
+  const tg = rows.reduce((a,r)=> a + n(r.Games), 0);
+  const g  = rows.reduce((a,r)=> a + n(r.Goals), 0);
+  const as = rows.reduce((a,r)=> a + n(r.Assists), 0);
+  const ga = rows.reduce((a,r)=> a + n(r.GA), 0);
+  $("totGames").textContent = fmt(tg,0);
+  $("totGoals").textContent = fmt(g,0);
+  $("totAssists").textContent = fmt(as,0);
+  $("totGA").textContent = fmt(ga,0);
+}
+
+function renderTop5(rows, label="All") {
+  const top = rows.slice(0,5);
+  $("top5").innerHTML = top.map((r,i)=>`<span class="chip">#${i+1} ${r.Name}: ${fmt(r.GA,0)} in ${label}</span>`).join("");
+}
+
+function renderTable(rows) {
+  const q = $("q").value.toLowerCase().trim();
+  const [sortKey, dir] = $("sort").value.split("|");
+
+  let filtered = rows.filter(r => !q || r.Name.toLowerCase().includes(q));
+
+  filtered.sort((a,b) => {
+    const av = a[sortKey], bv = b[sortKey];
+    if (typeof av === "number" && typeof bv === "number") return dir==="desc" ? (bv-av) : (av-bv);
+    return dir==="desc" ? String(bv).localeCompare(String(av)) : String(av).localeCompare(String(bv));
+  });
+
+  const tb = document.querySelector("#tbl tbody");
+  tb.innerHTML = "";
+  for (const r of filtered) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${r.Rank}</td>
+      <td>${r.Name}</td>
+      <td>${fmt(r.Games,0)}</td>
+      <td>${fmt(r.Goals,0)}</td>
+      <td>${fmt(r.Assists,0)}</td>
+      <td>${fmt(r.GA,0)}</td>
+      <td>${fmt(r.avgG)}</td>
+      <td>${fmt(r.avgA)}</td>
+      <td>${fmt(r.avgGA)}</td>
+    `;
+    tb.appendChild(tr);
+  }
+}
+
+function renderHistory(matchdays, appearances) {
+  const byMatchday = new Map();
+  for (const a of appearances) {
+    const md = a.expand?.matchday;
+    const p = a.expand?.player;
+    if (!md || !p) continue;
+    const key = md.id;
+    if (!byMatchday.has(key)) byMatchday.set(key, { md, list: [] });
+    byMatchday.get(key).list.push({
+      name: p.name || p.username || "Unknown",
+      goals: n(a.goals),
+      assists: n(a.assists)
+    });
+  }
+
+  const blocks = matchdays.map(md => {
+    const block = byMatchday.get(md.id);
+    const items = (block?.list || []).sort((a,b)=> (b.goals+b.assists) - (a.goals+a.assists) || a.name.localeCompare(b.name));
+    const lines = items.map(x => `<li>${x.name} — ${x.goals}G, ${x.assists}A</li>`).join("");
+    return `
+      <div style="margin:10px 0 16px;">
+        <div><strong>${md.title || "Matchday"}</strong> <span class="meta">(${md.date ? new Date(md.date).toLocaleDateString() : ""})</span></div>
+        <ul>${lines || "<li>No appearances yet.</li>"}</ul>
+      </div>
+    `;
+  });
+
+  $("history").innerHTML = blocks.join("") || "No matchdays yet.";
+}
+
+/** =========================
+ *  INIT
+ *  ========================= */
+let appearancesAll = [];
+let matchdaysAll = [];
+
+async function init() {
+  try {
+    const season = await getActiveSeason();
+    if (!season) throw new Error("No active season found.");
+
+    $("seasonPill").textContent = `Season: ${season.year || "Active"}`;
+    $("meta").textContent = `Loading ${season.name || "season"}…`;
+
+    matchdaysAll = await getMatchdays(season.id);
+    appearancesAll = await getAppearances(season.id);
+
+    const months = buildMonthOptions(matchdaysAll);
+    const monthSel = $("month");
+    months.forEach(m => {
+      const opt = document.createElement("option");
+      opt.value = m;
+      opt.textContent = monthLabel(m);
+      monthSel.appendChild(opt);
+    });
+
+    const rowsAll = buildTotals(appearancesAll, "ALL");
+    renderKpis(rowsAll);
+    renderTop5(rowsAll, "All season");
+    renderTable(rowsAll);
+    renderHistory(matchdaysAll, appearancesAll);
+
+    $("meta").textContent = `Players (with stats): ${rowsAll.length} • Matchdays: ${matchdaysAll.length} • Last refreshed: ${new Date().toLocaleString()}`;
+  } catch (e) {
+    console.error(e);
+    $("meta").textContent =
+      "2026 page couldn't reach PocketBase yet. If you're testing locally, make sure PocketBase is running and PB_BASE is correct. " +
+      "For the live website, PocketBase must be hosted publicly (not 127.0.0.1).";
+  }
+}
+
+$("q").addEventListener("input", () => renderTable(buildTotals(appearancesAll, $("month").value)));
+$("sort").addEventListener("change", () => renderTable(buildTotals(appearancesAll, $("month").value)));
+$("month").addEventListener("change", () => {
+  const m = $("month").value;
+  const rows = buildTotals(appearancesAll, m);
+  renderKpis(rows);
+  renderTop5(rows, m === "ALL" ? "All season" : monthLabel(m));
+  renderTable(rows);
+});
+
+init();
+</script>
+</body>
+</html>
