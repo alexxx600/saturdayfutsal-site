@@ -309,6 +309,150 @@
       font-size:56px;
     }
   }
+    .home-highlights {
+    margin:0 0 24px;
+    padding:24px;
+    border-radius:24px;
+    background:rgba(16,22,30,.9);
+    border:1px solid var(--border);
+    box-shadow:0 12px 30px rgba(0,0,0,.2);
+  }
+
+  .section-heading {
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:16px;
+    margin-bottom:18px;
+  }
+
+  .section-kicker {
+    color:var(--brand);
+    font-size:12px;
+    font-weight:800;
+    letter-spacing:.12em;
+    margin-bottom:8px;
+  }
+
+  .section-heading h3 {
+    margin:0;
+    font-size:32px;
+    color:var(--text);
+  }
+
+  .section-link {
+    color:#d9f99d;
+    text-decoration:none;
+    font-size:14px;
+    white-space:nowrap;
+  }
+
+  .highlights-grid {
+    display:grid;
+    grid-template-columns:1.35fr 1fr 1fr;
+    gap:16px;
+  }
+
+  .highlight-feature,
+  .highlight-card {
+    border-radius:22px;
+    border:1px solid var(--border);
+    background:rgba(255,255,255,.03);
+    padding:22px;
+  }
+
+  .highlight-feature {
+    min-height:220px;
+    background:
+      linear-gradient(180deg, rgba(198,255,0,.08), rgba(255,255,255,.02));
+  }
+
+  .highlight-tag {
+    color:var(--brand);
+    font-size:12px;
+    font-weight:800;
+    letter-spacing:.12em;
+    margin-bottom:12px;
+  }
+
+  .highlight-feature h4,
+  .highlight-card h4 {
+    margin:0 0 10px;
+    font-size:26px;
+    color:var(--text);
+  }
+
+  .highlight-feature p,
+  .highlight-card p {
+    margin:0;
+    color:#cbd5e1;
+    line-height:1.6;
+    font-size:15px;
+  }
+
+  .home-links {
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:16px;
+    margin:0 0 24px;
+  }
+
+  .feature-card {
+    display:block;
+    text-decoration:none;
+    color:var(--text);
+    background:rgba(16,22,30,.9);
+    border:1px solid var(--border);
+    border-radius:22px;
+    padding:22px;
+    box-shadow:0 12px 30px rgba(0,0,0,.2);
+  }
+
+  .feature-card:hover {
+    transform:translateY(-2px);
+    border-color:rgba(198,255,0,.25);
+  }
+
+  .feature-eyebrow {
+    color:var(--brand);
+    font-size:12px;
+    font-weight:800;
+    letter-spacing:.12em;
+    margin-bottom:12px;
+  }
+
+  .feature-card h3 {
+    margin:0 0 10px;
+    font-size:24px;
+    color:var(--text);
+  }
+
+  .feature-card p {
+    margin:0;
+    color:#cbd5e1;
+    line-height:1.6;
+    font-size:14px;
+  }
+
+  @media (max-width: 900px) {
+    .highlights-grid,
+    .home-links {
+      grid-template-columns:1fr 1fr;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .section-heading,
+    .highlights-grid,
+    .home-links {
+      display:grid;
+      grid-template-columns:1fr;
+    }
+
+    .section-link {
+      white-space:normal;
+    }
+  }
 </style>
 </head>
 <body>
@@ -355,61 +499,120 @@
     </div>
   </section>
 
-  <section class="card">
-      <div class="search">
-        <select id="seasonSelect"></select>
-        <input id="q" type="search" placeholder="Search player…" />
-        <select id="sort">
-          <option value="Rank|asc">Sort: Rank (asc)</option>
-<option value="Total goals +Assists(All season )|desc">Sort: Total Contributions (desc)</option>
-          <option value="Total goals  (All season stats)|desc">Sort: Goals (desc)</option>
-          <option value="Total Assists (All season stats)|desc">Sort: Assists (desc)</option>
-          <option value="Average Total contribution|desc">Sort: Avg Contribution (desc)</option>
-          <option value="Total games played (All season stats)|desc">Sort: Games (desc)</option>
-          <option value="Player Name|asc">Sort: Player (A→Z)</option>
-        </select>
+      <section class="home-highlights">
+      <div class="section-heading">
+        <div>
+          <div class="section-kicker">LATEST</div>
+          <h3>Highlights, Media & News</h3>
+        </div>
+        <a class="section-link" href="#">View all updates</a>
       </div>
-      <div class="top5" id="top5"></div>
-<section class="card" style="margin-top:16px;">
-  <div id="seasonTotals" class="totals">
-    <div class="pill">Season totals</div>
-    <div class="totals-grid">
-      <div class="kpi"><div class="kpi-label">Total Games</div><div class="kpi-value" id="totGames">—</div></div>
-      <div class="kpi"><div class="kpi-label">Total Goals</div><div class="kpi-value" id="totGoals">—</div></div>
-      <div class="kpi"><div class="kpi-label">Total Assists</div><div class="kpi-value" id="totAssists">—</div></div>
-      <div class="kpi"><div class="kpi-label">Total Goals+Assists</div><div class="kpi-value" id="totGA">—</div></div>
-    </div>
-  </div>
-</section>
-      <div class="card-inner">
-        <table id="tbl">
-          <thead>
-            <tr>
-              <th data-k="Rank">#</th><th data-k="Player Name">Player</th>
-              <th data-k="Total games played (All season stats)">Games</th>
-              <th data-k="Total goals  (All season stats)">Goals</th>
-              <th data-k="Total Assists (All season stats)">Assists</th>
-              <th data-k="Total goals +Assists(All season )">Goals+Assists</th>
-              <th data-k="Average goals per game">Avg G/Game</th>
-              <th data-k="Average assists per game">Avg A/Game</th>
-              <th data-k="Average Total contribution">Avg G+A/Game</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-          <tfoot>
-    <tr>
-      <th>Total</th>
-      <th id="ftGames">—</th>
-      <th id="ftGoals">—</th>
-      <th id="ftAssists">—</th>
-      <th id="ftGA">—</th>
-      <th></th>
-      <th></th>
-      <th></th>
-    </tr>
-  </tfoot>
-</table>
+
+      <div class="highlights-grid">
+        <article class="highlight-feature">
+          <div class="highlight-tag">FEATURED</div>
+          <h4>Round 6 recap coming soon</h4>
+          <p>
+            Matchday highlights, standout moments, best goals, player shoutouts,
+            photos and short weekly updates will live here.
+          </p>
+        </article>
+
+        <article class="highlight-card">
+          <div class="highlight-tag">MEDIA</div>
+          <h4>Photo gallery</h4>
+          <p>Upload indoor court photos, player action shots and matchday media here.</p>
+        </article>
+
+        <article class="highlight-card">
+          <div class="highlight-tag">NEWS</div>
+          <h4>Competition updates</h4>
+          <p>Post RSVP reminders, team announcements, ladder updates and merch news.</p>
+        </article>
       </div>
+    </section>
+
+    <section class="home-links">
+      <a class="feature-card" href="/stats.html">
+        <div class="feature-eyebrow">01</div>
+        <h3>Stats</h3>
+        <p>View the full rankings ladder, season totals, search and player stats.</p>
+      </a>
+
+      <a class="feature-card" href="#">
+        <div class="feature-eyebrow">02</div>
+        <h3>RSVP</h3>
+        <p>Confirmed players, upcoming sessions and teams coming soon.</p>
+      </a>
+
+      <a class="feature-card" href="#">
+        <div class="feature-eyebrow">03</div>
+        <h3>Player Profiles</h3>
+        <p>Optional player photos, profile cards and season performance snapshots.</p>
+      </a>
+
+      <a class="feature-card" href="#">
+        <div class="feature-eyebrow">04</div>
+        <h3>Merchandise</h3>
+        <p>Keep the merch area ready for future drops, shirts and team gear.</p>
+      </a>
+    </section>    <section class="home-highlights">
+      <div class="section-heading">
+        <div>
+          <div class="section-kicker">LATEST</div>
+          <h3>Highlights, Media & News</h3>
+        </div>
+        <a class="section-link" href="#">View all updates</a>
+      </div>
+
+      <div class="highlights-grid">
+        <article class="highlight-feature">
+          <div class="highlight-tag">FEATURED</div>
+          <h4>Round 6 recap coming soon</h4>
+          <p>
+            Matchday highlights, standout moments, best goals, player shoutouts,
+            photos and short weekly updates will live here.
+          </p>
+        </article>
+
+        <article class="highlight-card">
+          <div class="highlight-tag">MEDIA</div>
+          <h4>Photo gallery</h4>
+          <p>Upload indoor court photos, player action shots and matchday media here.</p>
+        </article>
+
+        <article class="highlight-card">
+          <div class="highlight-tag">NEWS</div>
+          <h4>Competition updates</h4>
+          <p>Post RSVP reminders, team announcements, ladder updates and merch news.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="home-links">
+      <a class="feature-card" href="/stats.html">
+        <div class="feature-eyebrow">01</div>
+        <h3>Stats</h3>
+        <p>View the full rankings ladder, season totals, search and player stats.</p>
+      </a>
+
+      <a class="feature-card" href="#">
+        <div class="feature-eyebrow">02</div>
+        <h3>RSVP</h3>
+        <p>Confirmed players, upcoming sessions and teams coming soon.</p>
+      </a>
+
+      <a class="feature-card" href="#">
+        <div class="feature-eyebrow">03</div>
+        <h3>Player Profiles</h3>
+        <p>Optional player photos, profile cards and season performance snapshots.</p>
+      </a>
+
+      <a class="feature-card" href="#">
+        <div class="feature-eyebrow">04</div>
+        <h3>Merchandise</h3>
+        <p>Keep the merch area ready for future drops, shirts and team gear.</p>
+      </a>
     </section>
   </main>
   <footer>Built for learning Azure • Static site ready for App Service or Static Web Apps</footer>
