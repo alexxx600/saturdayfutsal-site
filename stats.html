@@ -479,12 +479,102 @@
     }
   }
 
+
+  .site-header {
+    padding:16px 24px;
+    text-align:left;
+  }
+
+  .site-nav {
+    max-width:1200px;
+    margin:0 auto;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:18px;
+  }
+
+  .site-brand {
+    display:flex;
+    align-items:center;
+    gap:10px;
+    color:var(--text);
+    text-decoration:none;
+    font-weight:900;
+    letter-spacing:.04em;
+  }
+
+  .site-brand-mark {
+    width:42px;
+    height:42px;
+    border-radius:14px;
+    display:grid;
+    place-items:center;
+    background:var(--brand);
+    color:#08110a;
+    box-shadow:0 8px 24px var(--glow);
+  }
+
+  .site-links {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
+    justify-content:flex-end;
+  }
+
+  .site-links a {
+    color:#cbd5e1;
+    text-decoration:none;
+    font-size:14px;
+    font-weight:700;
+    padding:9px 12px;
+    border-radius:999px;
+    border:1px solid transparent;
+  }
+
+  .site-links a:hover,
+  .site-links a.active {
+    color:#08110a;
+    background:var(--brand);
+    border-color:rgba(198,255,0,.35);
+  }
+
+  .site-meta {
+    max-width:1200px;
+    margin:10px auto 0;
+    text-align:left;
+  }
+
+  @media (max-width: 640px) {
+    .site-nav {
+      align-items:flex-start;
+      flex-direction:column;
+    }
+
+    .site-links {
+      justify-content:flex-start;
+    }
+  }
+
 </style>
 </head>
 <body>
-  <header>
-    <h1>SFC Stats Dashboard</h1>
-    <div class="meta" id="meta">Loading latest data…</div>
+  <header class="site-header">
+    <div class="site-nav">
+      <a class="site-brand" href="/index.html">
+        <span class="site-brand-mark">SFC</span>
+        <span>Saturday Futsal</span>
+      </a>
+      <nav class="site-links" aria-label="Main navigation">
+        <a href="/index.html">Home</a>
+        <a href="/stats.html" class="active">Stats</a>
+        <a href="#">RSVP</a>
+        <a href="#">Players</a>
+        <a href="#">News</a>
+      </nav>
+    </div>
+    <div class="meta site-meta" id="meta">Loading latest data…</div>
   </header>
   <main>
   <section class="hero">
