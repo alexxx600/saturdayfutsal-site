@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>SFC Stats Dashboard</title>
+<title>SFC Stats Dashboard v1.2.2</title>
 <style>
   :root { --brand:#0078d4; --bg:#f5f7fb; --text:#0f172a; --muted:#64748b; }
   html, body { margin:0; padding:0; background:var(--bg); color:var(--text); font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
@@ -557,6 +557,69 @@
     }
   }
 
+
+  /* v1.2.2 polish */
+  .kpi {
+    position:relative;
+    overflow:hidden;
+    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.025));
+    border:1px solid rgba(198,255,0,.12);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 10px 24px rgba(0,0,0,.16);
+  }
+
+  .kpi::after {
+    content:"";
+    position:absolute;
+    inset:auto -30% -45% -30%;
+    height:70px;
+    background:radial-gradient(circle, rgba(198,255,0,.12), transparent 62%);
+    pointer-events:none;
+  }
+
+  .kpi-value {
+    color:var(--brand);
+    font-size:28px;
+    letter-spacing:-.03em;
+  }
+
+  .player-link,
+  .podium-link {
+    color:var(--text);
+    text-decoration:none;
+    font-weight:800;
+  }
+
+  .player-link:hover,
+  .podium-link:hover {
+    color:var(--brand);
+    text-decoration:underline;
+    text-underline-offset:4px;
+  }
+
+  .card,
+  .podium-player,
+  .match-card,
+  .hero {
+    animation:sfcFadeUp .38s ease both;
+  }
+
+  .podium-player:nth-child(2) { animation-delay:.06s; }
+  .podium-player:nth-child(3) { animation-delay:.12s; }
+
+  @keyframes sfcFadeUp {
+    from { opacity:0; transform:translateY(10px); }
+    to { opacity:1; transform:translateY(0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card,
+    .podium-player,
+    .match-card,
+    .hero {
+      animation:none;
+    }
+  }
+
 </style>
 </head>
 <body>
@@ -689,7 +752,7 @@
       </div>
     </section>
   </main>
-  <footer>Built for learning Azure • Static site ready for App Service or Static Web Apps</footer>
+  <footer>Saturday Futsal Club • Stats v1.2.2</footer>
 
 <script>
 const PB = "https://api.saturdayfutsal.com";
@@ -766,6 +829,10 @@ function initials(name) {
     .join("") || "?";
 }
 
+function playerUrl(name) {
+  return `/player.html?name=${encodeURIComponent(name || "Unknown")}`;
+}
+
 function renderPodium() {
   const el = document.getElementById("topPodium");
   if (!el) return;
@@ -797,7 +864,7 @@ function renderPodium() {
       <article class="podium-player ${classes[rank] || ""}">
         <div class="podium-rank">${medals[rank] || `#${rank}`}</div>
         <div class="podium-avatar">${initials(name)}</div>
-        <div class="podium-name">${name}</div>
+        <div class="podium-name"><a class="podium-link" href="${playerUrl(name)}">${name}</a></div>
         <div class="podium-total">${ga}</div>
         <div class="podium-label">Goals + Assists</div>
         <div class="podium-mini">
@@ -827,7 +894,7 @@ function render() {
   for (const r of filtered) {
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${fmt(r["Rank"])}</td><td>${r["Player Name"]}</td>
+      <td>${fmt(r["Rank"])}</td><td><a class="player-link" href="${playerUrl(r["Player Name"])}">${r["Player Name"]}</a></td>
       <td>${fmt(r["Total games played (All season stats)"])}</td>
       <td>${fmt(r["Total goals  (All season stats)"])}</td>
       <td>${fmt(r["Total Assists (All season stats)"])}</td>
@@ -842,7 +909,7 @@ function render() {
   // Top 5 by total contributions (goals+assists)
   const top = [...rows].sort((a,b)=>(b["Total goals +Assists(All season )"] - a["Total goals +Assists(All season )"])).slice(0,5);
   const t5 = document.getElementById("top5");
-  t5.innerHTML = top.map((r, i)=>`<span class="chip">#${i+1} ${r["Player Name"]}: ${fmt(r["Total goals +Assists(All season )"])} total</span>`).join("");
+  t5.innerHTML = top.map((r, i)=>`<span class="chip">#${i+1} <a class="player-link" href="${playerUrl(r["Player Name"])}">${r["Player Name"]}</a>: ${fmt(r["Total goals +Assists(All season )"])} total</span>`).join("");
   renderPodium();
 }
 
@@ -1062,7 +1129,7 @@ async function init() {
 
     const top = [...rows].slice(0,5);
     const t5 = document.getElementById("top5");
-    t5.innerHTML = top.map((r,i)=>`<span class="chip">#${i+1} ${r["Player Name"]}: ${fmt(r["Total goals +Assists(All season )"])} total</span>`).join("");
+    t5.innerHTML = top.map((r,i)=>`<span class="chip">#${i+1} <a class="player-link" href="${playerUrl(r["Player Name"])}">${r["Player Name"]}</a>: ${fmt(r["Total goals +Assists(All season )"])} total</span>`).join("");
 
     render();
 
