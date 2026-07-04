@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Saturday Futsal Stats</title>
+<title>SFC Stats Dashboard</title>
 <style>
   :root { --brand:#0078d4; --bg:#f5f7fb; --text:#0f172a; --muted:#64748b; }
   html, body { margin:0; padding:0; background:var(--bg); color:var(--text); font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
@@ -314,27 +314,193 @@
       font-size:56px;
     }
   }
+
+
+  .sfc-lockup {
+    display:flex;
+    align-items:center;
+    gap:24px;
+  }
+
+  .sfc-mark {
+    width:132px;
+    height:132px;
+    border-radius:32px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:linear-gradient(135deg, rgba(198,255,0,.95), rgba(163,230,53,.78));
+    color:#08110a;
+    font-size:42px;
+    font-weight:1000;
+    letter-spacing:-.08em;
+    box-shadow:0 20px 55px rgba(198,255,0,.22);
+  }
+
+  .sfc-title {
+    font-size:clamp(76px, 12vw, 132px);
+    color:var(--text);
+  }
+
+  .podium-card {
+    margin-bottom:24px;
+  }
+
+  .podium-heading {
+    display:flex;
+    justify-content:space-between;
+    gap:20px;
+    align-items:flex-end;
+    margin-bottom:18px;
+  }
+
+  .podium-heading h2 {
+    margin:0;
+    font-size:34px;
+    color:var(--text);
+  }
+
+  .podium-heading p {
+    margin:0;
+    color:#cbd5e1;
+    font-size:14px;
+    max-width:360px;
+    text-align:right;
+  }
+
+  .podium {
+    display:grid;
+    grid-template-columns:1fr 1.15fr 1fr;
+    gap:16px;
+    align-items:end;
+  }
+
+  .podium-player {
+    position:relative;
+    border-radius:24px;
+    border:1px solid var(--border);
+    background:rgba(255,255,255,.04);
+    padding:20px;
+    text-align:center;
+    overflow:hidden;
+  }
+
+  .podium-player.first {
+    min-height:250px;
+    background:linear-gradient(180deg, rgba(198,255,0,.18), rgba(255,255,255,.04));
+    border-color:rgba(198,255,0,.28);
+  }
+
+  .podium-player.second,
+  .podium-player.third {
+    min-height:210px;
+  }
+
+  .podium-rank {
+    font-size:30px;
+    margin-bottom:10px;
+  }
+
+  .podium-avatar {
+    width:64px;
+    height:64px;
+    border-radius:50%;
+    margin:0 auto 12px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:rgba(198,255,0,.14);
+    color:var(--brand);
+    border:1px solid rgba(198,255,0,.24);
+    font-weight:900;
+    font-size:22px;
+  }
+
+  .podium-name {
+    font-size:22px;
+    font-weight:900;
+    margin-bottom:10px;
+    color:var(--text);
+  }
+
+  .podium-total {
+    color:var(--brand);
+    font-size:30px;
+    font-weight:1000;
+    line-height:1;
+  }
+
+  .podium-label {
+    color:var(--muted);
+    font-size:12px;
+    margin-top:4px;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+  }
+
+  .podium-mini {
+    display:flex;
+    justify-content:center;
+    gap:12px;
+    margin-top:14px;
+    color:#cbd5e1;
+    font-size:13px;
+  }
+
+  .podium-loading {
+    grid-column:1 / -1;
+    color:var(--muted);
+    padding:20px;
+  }
+
+  @media (max-width: 900px) {
+    .sfc-lockup {
+      align-items:flex-start;
+      flex-direction:column;
+    }
+
+    .podium {
+      grid-template-columns:1fr;
+    }
+
+    .podium-player.first,
+    .podium-player.second,
+    .podium-player.third {
+      min-height:auto;
+    }
+
+    .podium-heading {
+      align-items:flex-start;
+      flex-direction:column;
+    }
+
+    .podium-heading p {
+      text-align:left;
+    }
+  }
+
 </style>
 </head>
 <body>
   <header>
-    <h1>Futsal Player Stats Dashboard</h1>
+    <h1>SFC Stats Dashboard</h1>
     <div class="meta" id="meta">Loading latest data…</div>
   </header>
   <main>
   <section class="hero">
     <div class="hero-grid">
       <div>
-        <div class="hero-kicker">SATURDAY FUTSAL</div>
-        <h2 class="hero-title">
-          THE<br>
-          BEAUTIFUL<br>
-          <span class="accent">GAME</span>
-        </h2>
-        <p class="hero-sub">
-          Weekly social futsal, live season stats, player rankings, and matchday energy —
-          all in one place.
-        </p>
+        <div class="hero-kicker">SATURDAY FUTSAL CLUB</div>
+        <div class="sfc-lockup">
+          <div class="sfc-mark">SFC</div>
+          <div>
+            <h2 class="hero-title sfc-title">SFC</h2>
+            <p class="hero-sub">
+              Stats dashboard for Saturday Futsal — track the ladder, top performers,
+              season totals and gameweek-by-gameweek form.
+            </p>
+          </div>
+        </div>
       </div>
 
       <div class="match-card">
@@ -357,6 +523,19 @@
         <a class="hero-btn" href="#">CLAIM YOUR SPOT</a>
         <div class="hero-note">Limited spots remaining</div>
       </div>
+    </div>
+  </section>
+
+  <section class="card podium-card">
+    <div class="podium-heading">
+      <div>
+        <div class="hero-kicker">TOP PERFORMERS</div>
+        <h2>Top 3 Podium</h2>
+      </div>
+      <p>Based on goals + assists for the selected season or gameweek.</p>
+    </div>
+    <div class="podium" id="topPodium">
+      <div class="podium-loading">Loading podium…</div>
     </div>
   </section>
 
@@ -487,6 +666,59 @@ function updateSeasonTotals() {
   ft('ftGames', tg); ft('ftGoals', g); ft('ftAssists', a); ft('ftGA', ga);
 }
 
+
+function initials(name) {
+  return String(name || "?")
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(part => part[0].toUpperCase())
+    .join("") || "?";
+}
+
+function renderPodium() {
+  const el = document.getElementById("topPodium");
+  if (!el) return;
+
+  const top = [...rows]
+    .sort((a,b) =>
+      (b["Total goals +Assists(All season )"] - a["Total goals +Assists(All season )"]) ||
+      (b["Total goals  (All season stats)"] - a["Total goals  (All season stats)"])
+    )
+    .slice(0, 3);
+
+  if (!top.length) {
+    el.innerHTML = `<div class="podium-loading">No player stats available yet.</div>`;
+    return;
+  }
+
+  const order = [top[1], top[0], top[2]].filter(Boolean);
+  const classes = { 1: "first", 2: "second", 3: "third" };
+  const medals = { 1: "🥇", 2: "🥈", 3: "🥉" };
+
+  el.innerHTML = order.map(player => {
+    const rank = player["Rank"];
+    const ga = fmt(player["Total goals +Assists(All season )"]);
+    const goals = fmt(player["Total goals  (All season stats)"]);
+    const assists = fmt(player["Total Assists (All season stats)"]);
+    const name = player["Player Name"];
+
+    return `
+      <article class="podium-player ${classes[rank] || ""}">
+        <div class="podium-rank">${medals[rank] || `#${rank}`}</div>
+        <div class="podium-avatar">${initials(name)}</div>
+        <div class="podium-name">${name}</div>
+        <div class="podium-total">${ga}</div>
+        <div class="podium-label">Goals + Assists</div>
+        <div class="podium-mini">
+          <span>${goals} G</span>
+          <span>${assists} A</span>
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
 function render() {
   const q = document.getElementById('q').value.toLowerCase().trim();
   const sortSel = document.getElementById('sort').value.split("|");
@@ -521,6 +753,7 @@ function render() {
   const top = [...rows].sort((a,b)=>(b["Total goals +Assists(All season )"] - a["Total goals +Assists(All season )"])).slice(0,5);
   const t5 = document.getElementById("top5");
   t5.innerHTML = top.map((r, i)=>`<span class="chip">#${i+1} ${r["Player Name"]}: ${fmt(r["Total goals +Assists(All season )"])} total</span>`).join("");
+  renderPodium();
 }
 
 function getSeasonIdFromUrl() {
