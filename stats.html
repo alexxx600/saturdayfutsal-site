@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Futsal Player Stats Dashboard</title>
+<title>Saturday Futsal Stats</title>
 <style>
   :root { --brand:#0078d4; --bg:#f5f7fb; --text:#0f172a; --muted:#64748b; }
   html, body { margin:0; padding:0; background:var(--bg); color:var(--text); font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
@@ -264,6 +264,11 @@
     border:1px solid var(--border);
   }
 
+  select option {
+    background:#111827;
+    color:#f8fafc;
+  }
+
   table {
     color:var(--text);
   }
@@ -358,6 +363,9 @@
   <section class="card">
       <div class="search">
         <select id="seasonSelect"></select>
+        <select id="gameweekSelect">
+          <option value="all">Gameweek: All</option>
+        </select>
         <input id="q" type="search" placeholder="Search player…" />
         <select id="sort">
           <option value="Rank|asc">Sort: Rank (asc)</option>
@@ -421,6 +429,8 @@ const PB = "https://api.saturdayfutsal.com";
  // Place data.json next to this index.html when deploying
 
 let rows = [];
+let allMatchdays = [];
+let currentSeasonId = null;
  function getSeasonIdFromUrl() {
   const url = new URL(window.location.href);
   return url.searchParams.get("seasonId"); // PocketBase record id
@@ -535,6 +545,80 @@ function setSeasonIdInUrl(seasonId) {
   window.location.href = url.toString();
 }
 
+async function loadStatsForGameweek(gameweekValue, seasonRec, matchdays) {
+  try {
+    const selectedMatchdays =
+      gameweekValue === "all"
+        ? matchdays
+        : matchdays.filter(md => md.id === gameweekValue);
+
+    const map = new Map();
+
+    for (const md of selectedMatchdays) {
+      const aRes = await fetch(`${PB}/api/collections/appearances/records?perPage=200&filter=matchday="${md.id}"&expand=player`);
+      if (!aRes.ok) throw new Error(`Appearances fetch failed (${aRes.status})`);
+
+      const aData = await aRes.json();
+      const apps = aData.items || [];
+
+      for (const a of apps) {
+        const name = a.expand?.player?.display_name || "Unknown";
+        const goals = Number(a.goals || 0);
+        const assists = Number(a.assists || 0);
+
+        if (!map.has(name)) map.set(name, { games: 0, goals: 0, assists: 0 });
+
+        const p = map.get(name);
+        p.games += 1;
+        p.goals += goals;
+        p.assists += assists;
+      }
+    }
+
+    const arr = Array.from(map.entries()).map(([playerName, p]) => {
+      const ga = p.goals + p.assists;
+
+      return {
+        "Player Name": playerName,
+        "Total games played (All season stats)": p.games,
+        "Total goals  (All season stats)": p.goals,
+        "Total Assists (All season stats)": p.assists,
+        "Total goals +Assists(All season )": ga,
+        "Average goals per game": p.games ? p.goals / p.games : 0,
+        "Average assists per game": p.games ? p.assists / p.games : 0,
+        "Average Total contribution": p.games ? ga / p.games : 0
+      };
+    });
+
+    arr.sort((a,b) =>
+      (b["Total goals +Assists(All season )"] - a["Total goals +Assists(All season )"]) ||
+      (b["Total goals  (All season stats)"] - a["Total goals  (All season stats)"]) ||
+      String(a["Player Name"]).localeCompare(String(b["Player Name"]))
+    );
+
+    arr.forEach((r, i) => r["Rank"] = i + 1);
+
+    rows = arr;
+
+    const selectedLabel =
+      gameweekValue === "all"
+        ? "All gameweeks"
+        : document.getElementById("gameweekSelect").selectedOptions[0].textContent;
+
+    const seasonLabel = seasonRec.display_name || seasonRec.name || seasonRec.year || "";
+
+    document.getElementById("meta").textContent =
+      `Season: ${seasonLabel} • ${selectedLabel} • Players: ${rows.length} • Last refreshed: ${new Date().toLocaleString()}`;
+
+    updateSeasonTotals();
+    render();
+
+  } catch (err) {
+    console.error(err);
+    alert(err.message || String(err));
+  }
+}
+
 async function init() {
   try {
     // 1) Load seasons
@@ -574,6 +658,23 @@ async function init() {
     if (!mdRes.ok) throw new Error(`Matchdays fetch failed (${mdRes.status})`);
     const mdData = await mdRes.json();
     const matchdays = mdData.items || [];
+
+    allMatchdays = matchdays;
+    currentSeasonId = seasonRec.id;
+
+    const gameweekSelect = document.getElementById("gameweekSelect");
+    gameweekSelect.innerHTML = `<option value="all">Gameweek: All</option>`;
+
+    for (const md of matchdays) {
+      const opt = document.createElement("option");
+      opt.value = md.id;
+      opt.textContent = `Gameweek ${md.gameweek_number || md.round || md.date || md.id}`;
+      gameweekSelect.appendChild(opt);
+    }
+
+    gameweekSelect.addEventListener("change", () => {
+      loadStatsForGameweek(gameweekSelect.value, seasonRec, matchdays);
+    });
 
     // 4) Load appearances for each matchday and aggregate
     const map = new Map(); // name -> {games, goals, assists}
@@ -648,12 +749,3 @@ async function init() {
     alert(err.message || String(err));
   }
 }
-
-   
-document.getElementById('q').addEventListener('input', render);
-document.getElementById('sort').addEventListener('change', render);
-
-init();
-</script>
-</body>
-</html>
