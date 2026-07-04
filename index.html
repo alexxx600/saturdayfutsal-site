@@ -564,9 +564,9 @@
 
         <div class="match-card">
           <div class="match-label">Next Match</div>
-          <h2 class="match-title">Saturday Futsal</h2>
+          <h2 class="match-title" id="nextMatchTitle">Saturday Futsal</h2>
 
-          <div class="countdown" aria-label="Countdown to next Saturday 5pm">
+          <div class="countdown" aria-label="Live countdown to the next match">
             <div class="count-box"><span class="count-num" id="days">--</span><span class="count-label">Days</span></div>
             <div class="count-box"><span class="count-num" id="hours">--</span><span class="count-label">Hrs</span></div>
             <div class="count-box"><span class="count-num" id="minutes">--</span><span class="count-label">Min</span></div>
@@ -575,12 +575,12 @@
 
           <div class="match-meta">
             <div class="meta-row"><span>Date / Time</span><span id="nextMatchLabel">Saturday • 5:00 PM</span></div>
-            <div class="meta-row"><span>Venue</span><span>UC Futsal Courts</span></div>
-            <div class="meta-row"><span>Confirmed</span><span>12 / 15 Players</span></div>
+            <div class="meta-row"><span>Venue</span><span id="nextMatchVenue">ANU Futsal Court</span></div>
+            <div class="meta-row"><span>Confirmed</span><span id="nextMatchConfirmed">20 / 20 Players</span></div>
           </div>
 
           <a class="btn btn-primary" style="width:100%;" href="#">Claim Your Spot</a>
-          <div class="hero-note">Limited spots remaining</div>
+          <div class="hero-note" id="nextMatchNote">Session currently full</div>
         </div>
       </div>
     </section>
@@ -668,7 +668,9 @@ function fmt(n) {
   return Number(n).toLocaleString(undefined, { maximumFractionDigits: 3 });
 }
 
-function getNextSaturdayFivePM() {
+let nextMatchDate = null;
+
+function getFallbackNextMatch() {
   const now = new Date();
   const target = new Date(now);
   target.setHours(17, 0, 0, 0);
@@ -681,13 +683,34 @@ function getNextSaturdayFivePM() {
   }
 
   target.setDate(now.getDate() + daysUntilSaturday);
-  return target;
+  return {
+    title: "Saturday Futsal",
+    match_date: target.toISOString(),
+    venue: "ANU Futsal Court",
+    capacity: 20
+  };
+}
+
+function formatMatchDate(target) {
+  const datePart = target.toLocaleDateString(undefined, {
+    weekday: "long",
+    month: "short",
+    day: "numeric"
+  });
+
+  const timePart = target.toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit"
+  });
+
+  return `${datePart} • ${timePart}`;
 }
 
 function updateCountdown() {
-  const target = getNextSaturdayFivePM();
+  if (!nextMatchDate) return;
+
   const now = new Date();
-  const diff = Math.max(0, target - now);
+  const diff = Math.max(0, nextMatchDate - now);
 
   const totalSeconds = Math.floor(diff / 1000);
   const days = Math.floor(totalSeconds / 86400);
@@ -699,13 +722,41 @@ function updateCountdown() {
   document.getElementById("hours").textContent = String(hours).padStart(2, "0");
   document.getElementById("minutes").textContent = String(minutes).padStart(2, "0");
   document.getElementById("seconds").textContent = String(seconds).padStart(2, "0");
+}
 
-  const label = target.toLocaleDateString(undefined, {
-    weekday:"long",
-    month:"short",
-    day:"numeric"
-  });
-  document.getElementById("nextMatchLabel").textContent = `${label} • 5:00 PM`;
+function renderNextMatch(record) {
+  const match = record || getFallbackNextMatch();
+  nextMatchDate = new Date(match.match_date);
+
+  const title = match.title || "Saturday Futsal";
+  const venue = match.venue || "ANU Futsal Court";
+  const capacity = Number(match.capacity || 20);
+
+  document.getElementById("nextMatchTitle").textContent = title;
+  document.getElementById("nextMatchLabel").textContent = formatMatchDate(nextMatchDate);
+  document.getElementById("nextMatchVenue").textContent = venue;
+
+  // Until RSVP is connected, confirmed is shown as full capacity.
+  document.getElementById("nextMatchConfirmed").textContent = `${capacity} / ${capacity} Players`;
+  document.getElementById("nextMatchNote").textContent = capacity >= 20 ? "Session currently full" : "Limited spots remaining";
+
+  updateCountdown();
+}
+
+async function loadNextMatch() {
+  try {
+    const filter = encodeURIComponent('status = "active"');
+    const res = await fetch(`${PB}/api/collections/next_match/records?perPage=1&sort=match_date&filter=${filter}`);
+    if (!res.ok) throw new Error(`Next match fetch failed (${res.status})`);
+
+    const data = await res.json();
+    const record = data.items?.[0];
+
+    renderNextMatch(record);
+  } catch (err) {
+    console.error(err);
+    renderNextMatch(getFallbackNextMatch());
+  }
 }
 
 async function loadTopPlayers() {
@@ -784,7 +835,7 @@ async function loadTopPlayers() {
   }
 }
 
-updateCountdown();
+loadNextMatch();
 setInterval(updateCountdown, 1000);
 loadTopPlayers();
 </script>
