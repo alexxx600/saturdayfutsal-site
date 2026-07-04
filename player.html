@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SFC Player Profile</title>
+<style>
+  :root {
+    --brand:#c6ff00;
+    --text:#f8fafc;
+    --muted:#94a3b8;
+    --border:rgba(255,255,255,.08);
+    --glow:rgba(198,255,0,.18);
+  }
+  html, body {
+    margin:0;
+    padding:0;
+    font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    background:linear-gradient(rgba(8,12,16,.86), rgba(8,12,16,.9)), url('/assets/futsal-bg.jpg') center/cover fixed;
+    color:var(--text);
+  }
+  .site-header {
+    padding:16px 24px;
+    background:rgba(10,14,18,.72);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--border);
+  }
+  .site-nav {
+    max-width:1200px;
+    margin:0 auto;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:18px;
+  }
+  .site-brand {
+    display:flex;
+    align-items:center;
+    gap:10px;
+    color:var(--text);
+    text-decoration:none;
+    font-weight:900;
+    letter-spacing:.04em;
+  }
+  .site-brand-mark {
+    width:42px;
+    height:42px;
+    border-radius:14px;
+    display:grid;
+    place-items:center;
+    background:var(--brand);
+    color:#08110a;
+    box-shadow:0 8px 24px var(--glow);
+  }
+  .site-links {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
+    justify-content:flex-end;
+  }
+  .site-links a {
+    color:#cbd5e1;
+    text-decoration:none;
+    font-size:14px;
+    font-weight:700;
+    padding:9px 12px;
+    border-radius:999px;
+    border:1px solid transparent;
+  }
+  .site-links a:hover, .site-links a.active {
+    color:#08110a;
+    background:var(--brand);
+  }
+  main {
+    max-width:900px;
+    margin:42px auto;
+    padding:0 16px 40px;
+  }
+  .profile-card {
+    background:rgba(16,22,30,.9);
+    border:1px solid var(--border);
+    border-radius:28px;
+    padding:32px;
+    box-shadow:0 18px 60px rgba(0,0,0,.28);
+  }
+  .kicker {
+    display:inline-block;
+    margin-bottom:14px;
+    padding:6px 12px;
+    border-radius:999px;
+    background:rgba(198,255,0,.12);
+    color:var(--brand);
+    border:1px solid rgba(198,255,0,.22);
+    font-size:12px;
+    font-weight:800;
+    letter-spacing:.12em;
+  }
+  h1 {
+    margin:0;
+    font-size:clamp(44px, 8vw, 82px);
+    line-height:.95;
+    letter-spacing:-.05em;
+  }
+  p {
+    color:#cbd5e1;
+    line-height:1.6;
+    max-width:680px;
+  }
+  .actions {
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+    margin-top:22px;
+  }
+  .btn {
+    display:inline-block;
+    text-decoration:none;
+    background:var(--brand);
+    color:#08110a;
+    font-weight:900;
+    padding:12px 16px;
+    border-radius:14px;
+  }
+  .btn.secondary {
+    background:rgba(255,255,255,.06);
+    color:var(--text);
+    border:1px solid var(--border);
+  }
+  footer { text-align:center; color:#94a3b8; font-size:12px; padding:24px; }
+</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="site-nav">
+    <a class="site-brand" href="/index.html"><span class="site-brand-mark">SFC</span><span>Saturday Futsal</span></a>
+    <nav class="site-links" aria-label="Main navigation">
+      <a href="/index.html">Home</a>
+      <a href="/stats.html">Stats</a>
+      <a href="#">RSVP</a>
+      <a href="/player.html" class="active">Players</a>
+      <a href="#">News</a>
+    </nav>
+  </div>
+</header>
+<main>
+  <section class="profile-card">
+    <div class="kicker">PLAYER PROFILE</div>
+    <h1 id="playerName">Player</h1>
+    <p>
+      Player profile dashboards are coming in the next version. This page is already linked from the stats table so we can build the full profile experience here next.
+    </p>
+    <p>
+      Planned stats: games, goals, assists, goals + assists, averages, season rank and gameweek-by-gameweek performance.
+    </p>
+    <div class="actions">
+      <a class="btn" href="/stats.html">Back to Stats</a>
+      <a class="btn secondary" href="/index.html">Home</a>
+    </div>
+  </section>
+</main>
+<footer>Saturday Futsal Club • Player profiles placeholder v1.2.2</footer>
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const name = params.get('name') || 'Player';
+  document.getElementById('playerName').textContent = name;
+  document.title = `${name} | SFC Player Profile`;
+</script>
+</body>
+</html>
