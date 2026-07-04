@@ -669,6 +669,59 @@ function fmt(n) {
 }
 
 let nextMatchDate = null;
+const EVENT_TIME_ZONE = "Australia/Sydney";
+
+function getTimeZoneOffsetMs(date, timeZone) {
+  const parts = new Intl.DateTimeFormat("en-AU", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false
+  }).formatToParts(date);
+
+  const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+  const asUTC = Date.UTC(
+    Number(values.year),
+    Number(values.month) - 1,
+    Number(values.day),
+    Number(values.hour),
+    Number(values.minute),
+    Number(values.second)
+  );
+
+  return asUTC - date.getTime();
+}
+
+function makeSydneyDate(year, month, day, hour, minute) {
+  let utcGuess = Date.UTC(year, month - 1, day, hour, minute, 0);
+
+  // Run twice to handle daylight-saving boundaries correctly.
+  for (let i = 0; i < 2; i++) {
+    const offset = getTimeZoneOffsetMs(new Date(utcGuess), EVENT_TIME_ZONE);
+    utcGuess = Date.UTC(year, month - 1, day, hour, minute, 0) - offset;
+  }
+
+  return new Date(utcGuess);
+}
+
+function parsePocketBaseMatchDate(value) {
+  if (!value) return null;
+
+  // PocketBase stores date values with a timezone. For Saturday Futsal,
+  // we treat the selected PocketBase date/time as ANU/Canberra local time
+  // so you can enter "Saturday 5:00 PM" naturally in PocketBase.
+  const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}):(\d{2})/);
+  if (match) {
+    const [, year, month, day, hour, minute] = match.map(Number);
+    return makeSydneyDate(year, month, day, hour, minute);
+  }
+
+  return new Date(value);
+}
 
 function getFallbackNextMatch() {
   const now = new Date();
@@ -685,20 +738,22 @@ function getFallbackNextMatch() {
   target.setDate(now.getDate() + daysUntilSaturday);
   return {
     title: "Saturday Futsal",
-    match_date: target.toISOString(),
+    match_date: `${target.getFullYear()}-${String(target.getMonth()+1).padStart(2,"0")}-${String(target.getDate()).padStart(2,"0")} 17:00:00`,
     venue: "ANU Futsal Court",
     capacity: 20
   };
 }
 
 function formatMatchDate(target) {
-  const datePart = target.toLocaleDateString(undefined, {
+  const datePart = target.toLocaleDateString("en-AU", {
+    timeZone: EVENT_TIME_ZONE,
     weekday: "long",
     month: "short",
     day: "numeric"
   });
 
-  const timePart = target.toLocaleTimeString(undefined, {
+  const timePart = target.toLocaleTimeString("en-AU", {
+    timeZone: EVENT_TIME_ZONE,
     hour: "numeric",
     minute: "2-digit"
   });
@@ -726,7 +781,7 @@ function updateCountdown() {
 
 function renderNextMatch(record) {
   const match = record || getFallbackNextMatch();
-  nextMatchDate = new Date(match.match_date);
+  nextMatchDate = parsePocketBaseMatchDate(match.match_date);
 
   const title = match.title || "Saturday Futsal";
   const venue = match.venue || "ANU Futsal Court";
