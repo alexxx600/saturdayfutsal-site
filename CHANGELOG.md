@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.2.2
+- Added clickable player names on the Stats table and podium.
+- Added placeholder Player Profile page routing.
+- Polished KPI cards and added subtle page animations.
+
 ## v1.2.1
 - Added global navigation to the Stats page.
 - Added Home link back to the homepage.
