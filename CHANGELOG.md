@@ -1,30 +1,28 @@
 # Changelog
 
-## v1.3.0
-- Rebuilt homepage as a proper SFC landing page.
-- Added global navigation to homepage.
-- Added automatic countdown to next Saturday 5:00 PM.
-- Added dynamic Top 5 player preview using PocketBase stats.
-- Added link from Top 5 preview to full stats ladder.
-- Kept highlights/news/media and feature card sections.
-- Removed unused full stats-table logic from homepage.
+## v1.4 - Live Next Match from PocketBase
+
+- Added `next_match` PocketBase integration on the homepage.
+- Homepage now reads title, match date/time, venue and capacity from PocketBase.
+- Countdown now uses the PocketBase `match_date` instead of hardcoded Saturday 5pm logic.
+- Updated default venue to ANU Futsal Court.
+- Confirmed players temporarily shows full capacity until RSVP is connected.
+
+## v1.3
+
+- Cleaned homepage layout.
+- Added Top 5 Players preview.
+- Added View Full Stats link.
 
 ## v1.2.2
+
+- Added player profile link support.
 - Added player profile page.
-- Added clickable player links from the stats page.
-- Added player dashboard with season stats and gameweek history.
 
 ## v1.2.1
-- Added global navigation to the stats page.
-- Added Home link and active Stats state.
 
-## v1.2.0
-- Added SFC branding to stats page.
-- Added Top 3 podium.
+- Added navigation.
 
-## v1.1.0
-- Added gameweek dropdown to the stats page.
-- Fixed dropdown colour issue.
+## v1.2
 
-## v1.0.0
-- Initial PocketBase-powered stats dashboard.
+- Added SFC branding and Top 3 podium.
